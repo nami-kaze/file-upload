@@ -29,20 +29,23 @@ const FileUpload = () => {
             setErrorMessage('No file selected.');
             return;
         }
-
+    
         const formData = new FormData();
         formData.append('file', file);
-
+    
         try {
-            await axios.post(`${process.env.REACT_APP_API_URL}/upload`, formData, {
+            const response = await axios.post(`${process.env.REACT_APP_API_URL}/upload`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
+            
+            console.log('Upload response:', response.data);
             alert('File uploaded successfully');
+            
         } catch (error) {
-            console.error('Error uploading file:', error);
-            alert('Failed to upload file');
+            console.error('Error details:', error.response?.data || error.message);
+            alert(`Upload failed: ${error.response?.data?.error || error.message}`);
         }
     };
 
