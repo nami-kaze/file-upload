@@ -11,7 +11,14 @@ var cors = require('cors')
 
 dotenv.config();
 const app = express();
-app.use(cors())
+app.use(cors({
+  origin: [
+      'http://localhost:3000',  // for local development
+      'https://file-upload-meas.vercel.app', // your frontend domain
+  ],
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
 const PORT = process.env.PORT || 5000;
 // MongoDB connection
 const mongoURI = process.env.MONGODB_URI;
