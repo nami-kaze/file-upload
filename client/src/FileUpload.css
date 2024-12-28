@@ -1,0 +1,36 @@
+.file-upload-container {
+    text-align: center;
+  }
+  
+  .upload-heading {
+    font-size: 36px;
+    color: #007bff;
+    margin-bottom: 30px;
+  }
+  
+  .file-upload-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .file-input {
+    border: 2px solid #007bff;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .upload-button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .upload-button:hover {
+    background-color: #0056b3;
+  }
