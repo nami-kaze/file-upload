@@ -1,3 +1,4 @@
+server.js
 const mongoose = require('mongoose');
 const express = require('express');
 const multer = require('multer');
@@ -8,11 +9,6 @@ const { GridFsStorage } = require('multer-gridfs-storage');
 const XLSX = require('xlsx');
 var cors = require('cors')
 
-const excelDataSchema = new mongoose.Schema({
-    data: Object
-}, { strict: false });
-
-const ExcelData = mongoose.model('ExcelData', excelDataSchema);
 
 const app = express();
 app.use(cors({
@@ -28,55 +24,49 @@ app.use(cors({
 const PORT = process.env.PORT || 5000;
 // MongoDB connection
 const mongoURI = process.env.MONGODB_URI;
-let gfs;
-let upload;
-
-// Initialize MongoDB connection and GridFS
-const initializeStorage = async () => {
-  try {
-    await mongoose.connect(mongoURI);
+mongoose.connect(mongoURI, { 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
+}).then(() => {
     console.log('MongoDB connected successfully');
-
-    const conn = mongoose.connection;
-    // Wait for the database connection to be ready
-    await new Promise(resolve => conn.once('open', resolve));
-    
-    gfs = new mongoose.mongo.GridFSBucket(conn.db, {
-      bucketName: 'excel-upload'
+}).catch(err => {
+    console.error('MongoDB connection error:', err);
+});
+const conn = mongoose.connection;
+let gfs;
+conn.once('open', () => {
+  gfs = new mongoose.mongo.GridFSBucket(conn.db, {
+    bucketName: 'excel-upload'
+  });
+});
+const storage = new GridFsStorage({
+  url: mongoURI,
+  file: (req, file) => {
+    return new Promise((resolve, reject) => {
+      crypto.randomBytes(16, (err, buf) => {
+        if (err) {
+          return reject(err);
+        }
+        const filename = buf.toString('hex') + 
+                            path.extname(file.originalname);
+        const fileInfo = {
+          filename: filename,
+          bucketName: 'excel-upload'
+        };
+        resolve(fileInfo);
+      });
     });
-
-    const storage = new GridFsStorage({
-      url: mongoURI,
-      file: (req, file) => {
-        return new Promise((resolve, reject) => {
-          crypto.randomBytes(16, (err, buf) => {
-            if (err) return reject(err);
-            const filename = buf.toString('hex') + path.extname(file.originalname);
-            resolve({
-              filename: filename,
-              bucketName: 'excel-upload'
-            });
-          });
-        });
-      }
-    });
-
-    upload = multer({ storage });
-    
-    // Start server only after connection is established
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
   }
-};
+});
+const upload = multer({ storage });
+// Create a MongoDB Schema for your Excel data
+const excelDataSchema = new mongoose.Schema({
+    // Add your fields based on Excel structure
+    // For example:
+    data: Object
+}, { strict: false }); // Using strict: false allows flexible document structure
 
-// Initialize connection
-initializeStorage();
-
+const ExcelData = mongoose.model('ExcelData', excelDataSchema);
 // Add better error handling in your upload route
 app.post("/upload", upload.single("file"), async (req, res) => {
   console.log("Upload endpoint hit");
@@ -164,7 +154,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
