@@ -23,41 +23,52 @@ app.use(cors({
 const PORT = process.env.PORT || 5000;
 // MongoDB connection
 const mongoURI = process.env.MONGODB_URI;
-mongoose.connect(mongoURI, { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
-}).then(() => {
-    console.log('MongoDB connected successfully');
-}).catch(err => {
-    console.error('MongoDB connection error:', err);
-});
-const conn = mongoose.connection;
 let gfs;
-conn.once('open', () => {
-  gfs = new mongoose.mongo.GridFSBucket(conn.db, {
-    bucketName: 'excel-upload'
-  });
-});
-const storage = new GridFsStorage({
-  url: mongoURI,
-  file: (req, file) => {
-    return new Promise((resolve, reject) => {
-      crypto.randomBytes(16, (err, buf) => {
-        if (err) {
-          return reject(err);
-        }
-        const filename = buf.toString('hex') + 
-                            path.extname(file.originalname);
-        const fileInfo = {
-          filename: filename,
-          bucketName: 'excel-upload'
-        };
-        resolve(fileInfo);
-      });
+let upload;
+
+// Initialize MongoDB connection and GridFS
+const initializeStorage = async () => {
+  try {
+    await mongoose.connect(mongoURI);
+    console.log('MongoDB connected successfully');
+
+    const conn = mongoose.connection;
+    gfs = new mongoose.mongo.GridFSBucket(conn.db, {
+      bucketName: 'excel-upload'
     });
+
+    const storage = new GridFsStorage({
+      url: mongoURI,
+      file: (req, file) => {
+        return new Promise((resolve, reject) => {
+          crypto.randomBytes(16, (err, buf) => {
+            if (err) return reject(err);
+            const filename = buf.toString('hex') + path.extname(file.originalname);
+            resolve({
+              filename: filename,
+              bucketName: 'excel-upload'
+            });
+          });
+        });
+      }
+    });
+
+    upload = multer({ storage });
+    
+    // Start server only after connection is established
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
   }
-});
-const upload = multer({ storage });
+};
+
+// Initialize connection
+initializeStorage();
+
 // Create a MongoDB Schema for your Excel data
 const excelDataSchema = new mongoose.Schema({
     // Add your fields based on Excel structure
@@ -151,8 +162,4 @@ app.use((err, req, res, next) => {
     error: err.message,
     details: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
 });
