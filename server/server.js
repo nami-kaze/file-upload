@@ -5,12 +5,10 @@ const path = require('path');
 const Grid = require('gridfs-stream');
 const crypto = require('crypto');
 const GridFsStorage = require('multer-gridfs-storage').GridFsStorage;
-const dotenv = require('dotenv');
 const XLSX = require('xlsx');
 var cors = require('cors')
 
 
-dotenv.config();
 const app = express();
 app.use(cors({
   origin: [
