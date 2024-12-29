@@ -33,6 +33,9 @@ const FileUpload = () => {
         const formData = new FormData();
         formData.append('file', file);
     
+        console.log('Uploading file:', file.name);
+        console.log('API URL:', process.env.REACT_APP_API_URL);
+    
         try {
             const response = await axios.post(`${process.env.REACT_APP_API_URL}/upload`, formData, {
                 headers: {
@@ -47,7 +50,11 @@ const FileUpload = () => {
             console.error('Full error:', error);
             console.error('Response data:', error.response?.data);
             console.error('Status:', error.response?.status);
-            alert(`Upload failed: ${error.response?.data?.error || error.message}`);
+            console.error('Error config:', error.config);
+            setErrorMessage(
+                `Upload failed: ${error.response?.data?.error || error.message}. 
+                 Status: ${error.response?.status}`
+            );
         }
     };
 

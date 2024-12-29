@@ -63,43 +63,60 @@ const excelDataSchema = new mongoose.Schema({
 const ExcelData = mongoose.model('ExcelData', excelDataSchema);
 // Add better error handling in your upload route
 app.post("/upload", upload.single("file"), async (req, res) => {
+  console.log("Upload endpoint hit");
   try {
     if (!req.file) {
+      console.log("No file received");
       return res.status(400).json({ error: "No file uploaded" });
     }
+    console.log("File received:", req.file.filename);
 
     // Get the file buffer from GridFS
     const file = await gfs.files.findOne({ filename: req.file.filename });
     if (!file) {
+      console.log("File not found in GridFS");
       return res.status(404).json({ error: "File not found after upload" });
     }
+    console.log("File found in GridFS");
 
     // Create read stream
     const readStream = gfs.createReadStream(file.filename);
     const chunks = [];
     
-    readStream.on('data', chunk => chunks.push(chunk));
+    readStream.on('data', chunk => {
+      console.log("Receiving chunk");
+      chunks.push(chunk)
+    });
+    
     readStream.on('error', err => {
-      console.error(err);
+      console.error("Stream error:", err);
       res.status(500).json({ error: "Error reading file" });
     });
     
     readStream.on('end', async () => {
-      const buffer = Buffer.concat(chunks);
-      
-      // Process Excel file
-      const workbook = XLSX.read(buffer);
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const data = XLSX.utils.sheet_to_json(sheet);
-
-      // Save to MongoDB
-      const result = await ExcelData.insertMany(data);
-      
-      res.status(200).json({ 
-        message: "File uploaded and processed successfully",
-        recordsProcessed: data.length
-      });
+      console.log("Stream ended, processing file");
+      try {
+        const buffer = Buffer.concat(chunks);
+        
+        // Process Excel file
+        const workbook = XLSX.read(buffer);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = XLSX.utils.sheet_to_json(sheet);
+        
+        console.log("Excel data processed, saving to DB");
+        // Save to MongoDB
+        const result = await ExcelData.create({ data: data });
+        
+        console.log("Data saved successfully");
+        res.status(200).json({ 
+          message: "File uploaded and processed successfully",
+          recordsProcessed: data.length
+        });
+      } catch (error) {
+        console.error("Processing error:", error);
+        res.status(500).json({ error: error.message });
+      }
     });
 
   } catch (error) {
@@ -110,6 +127,15 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     });
   }
 });
+
+mongoose.connection.on('connected', () => {
+  console.log('Connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
