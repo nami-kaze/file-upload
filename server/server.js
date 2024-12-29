@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const Grid = require('gridfs-stream');
 const crypto = require('crypto');
-const GridFsStorage = require('multer-gridfs-storage').GridFsStorage;
+const { GridFsStorage } = require('multer-gridfs-storage');
 const XLSX = require('xlsx');
 var cors = require('cors')
 
