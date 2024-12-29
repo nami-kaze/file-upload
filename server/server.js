@@ -8,6 +8,11 @@ const { GridFsStorage } = require('multer-gridfs-storage');
 const XLSX = require('xlsx');
 var cors = require('cors')
 
+const excelDataSchema = new mongoose.Schema({
+    data: Object
+}, { strict: false });
+
+const ExcelData = mongoose.model('ExcelData', excelDataSchema);
 
 const app = express();
 app.use(cors({
@@ -72,14 +77,6 @@ const initializeStorage = async () => {
 // Initialize connection
 initializeStorage();
 
-// Create a MongoDB Schema for your Excel data
-const excelDataSchema = new mongoose.Schema({
-    // Add your fields based on Excel structure
-    // For example:
-    data: Object
-}, { strict: false }); // Using strict: false allows flexible document structure
-
-const ExcelData = mongoose.model('ExcelData', excelDataSchema);
 // Add better error handling in your upload route
 app.post("/upload", upload.single("file"), async (req, res) => {
   console.log("Upload endpoint hit");
