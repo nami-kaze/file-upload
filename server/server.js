@@ -13,7 +13,8 @@ const app = express();
 app.use(cors({
   origin: [
       'http://localhost:3000',
-      'https://file-upload-meas.vercel.app'
+      'https://file-upload-meas.vercel.app',
+      'https://file-upload-brown.vercel.app'
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -23,7 +24,12 @@ const PORT = process.env.PORT || 5000;
 // MongoDB connection
 const mongoURI = process.env.MONGODB_URI;
 mongoose.connect(mongoURI, { 
-    useNewUrlParser: true, useUnifiedTopology: true 
+    useNewUrlParser: true, 
+    useUnifiedTopology: true 
+}).then(() => {
+    console.log('MongoDB connected successfully');
+}).catch(err => {
+    console.error('MongoDB connection error:', err);
 });
 const conn = mongoose.connection;
 let gfs;
@@ -132,6 +138,14 @@ mongoose.connection.on('connected', () => {
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
+});
+
+app.use((err, req, res, next) => {
+  console.error('Error details:', err);
+  res.status(500).json({ 
+    error: err.message,
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
 app.listen(PORT, () => {
