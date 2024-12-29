@@ -33,6 +33,9 @@ const initializeStorage = async () => {
     console.log('MongoDB connected successfully');
 
     const conn = mongoose.connection;
+    // Wait for the database connection to be ready
+    await new Promise(resolve => conn.once('open', resolve));
+    
     gfs = new mongoose.mongo.GridFSBucket(conn.db, {
       bucketName: 'excel-upload'
     });
@@ -162,4 +165,9 @@ app.use((err, req, res, next) => {
     error: err.message,
     details: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
