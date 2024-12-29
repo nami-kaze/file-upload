@@ -44,7 +44,9 @@ const FileUpload = () => {
             alert('File uploaded successfully');
             
         } catch (error) {
-            console.error('Error details:', error.response?.data || error.message);
+            console.error('Full error:', error);
+            console.error('Response data:', error.response?.data);
+            console.error('Status:', error.response?.status);
             alert(`Upload failed: ${error.response?.data?.error || error.message}`);
         }
     };

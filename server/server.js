@@ -6,6 +6,7 @@ const Grid = require('gridfs-stream');
 const crypto = require('crypto');
 const GridFsStorage = require('multer-gridfs-storage').GridFsStorage;
 const dotenv = require('dotenv');
+const XLSX = require('xlsx');
 var cors = require('cors')
 
 
@@ -52,6 +53,14 @@ const storage = new GridFsStorage({
   }
 });
 const upload = multer({ storage });
+// Create a MongoDB Schema for your Excel data
+const excelDataSchema = new mongoose.Schema({
+    // Add your fields based on Excel structure
+    // For example:
+    data: Object
+}, { strict: false }); // Using strict: false allows flexible document structure
+
+const ExcelData = mongoose.model('ExcelData', excelDataSchema);
 // Add better error handling in your upload route
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
@@ -59,22 +68,38 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // Your existing file processing code
-    const workbook = XLSX.read(req.file.buffer);
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(sheet);
+    // Get the file buffer from GridFS
+    const file = await gfs.files.findOne({ filename: req.file.filename });
+    if (!file) {
+      return res.status(404).json({ error: "File not found after upload" });
+    }
 
-    // Add logging
-    console.log("File received:", req.file.originalname);
-    console.log("Data length:", data.length);
-
-    // Your MongoDB save logic
-    const result = await YourModel.insertMany(data);
+    // Create read stream
+    const readStream = gfs.createReadStream(file.filename);
+    const chunks = [];
     
-    res.status(200).json({ 
-      message: "File uploaded successfully",
-      recordsProcessed: data.length
+    readStream.on('data', chunk => chunks.push(chunk));
+    readStream.on('error', err => {
+      console.error(err);
+      res.status(500).json({ error: "Error reading file" });
+    });
+    
+    readStream.on('end', async () => {
+      const buffer = Buffer.concat(chunks);
+      
+      // Process Excel file
+      const workbook = XLSX.read(buffer);
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(sheet);
+
+      // Save to MongoDB
+      const result = await ExcelData.insertMany(data);
+      
+      res.status(200).json({ 
+        message: "File uploaded and processed successfully",
+        recordsProcessed: data.length
+      });
     });
 
   } catch (error) {
