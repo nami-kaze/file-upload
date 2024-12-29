@@ -60,7 +60,7 @@ const FileUpload = () => {
 
     return (
         <div className="file-upload-container">
-            <h1 className="upload-heading">Excel File Uploads</h1>
+            <h4 className="upload-heading">Excel File Upload:</h4>
             <form className="file-upload-form" onSubmit={handleSubmit}>
                 <input
                     type="file"
