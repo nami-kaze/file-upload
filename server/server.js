@@ -34,8 +34,9 @@ mongoose.connect(mongoURI, {
 const conn = mongoose.connection;
 let gfs;
 conn.once('open', () => {
-  gfs = Grid(conn.db, mongoose.mongo);
-  gfs.collection('excel-upload');
+  gfs = new mongoose.mongo.GridFSBucket(conn.db, {
+    bucketName: 'excel-upload'
+  });
 });
 const storage = new GridFsStorage({
   url: mongoURI,
@@ -76,52 +77,56 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     console.log("File received:", req.file.filename);
 
     // Get the file buffer from GridFS
-    const file = await gfs.files.findOne({ filename: req.file.filename });
-    if (!file) {
+    const file = await gfs.find({ filename: req.file.filename }).toArray();
+    if (!file.length) {
       console.log("File not found in GridFS");
       return res.status(404).json({ error: "File not found after upload" });
     }
     console.log("File found in GridFS");
 
-    // Create read stream
-    const readStream = gfs.createReadStream(file.filename);
-    const chunks = [];
-    
-    readStream.on('data', chunk => {
-      console.log("Receiving chunk");
-      chunks.push(chunk)
-    });
-    
-    readStream.on('error', err => {
-      console.error("Stream error:", err);
-      res.status(500).json({ error: "Error reading file" });
-    });
-    
-    readStream.on('end', async () => {
-      console.log("Stream ended, processing file");
-      try {
-        const buffer = Buffer.concat(chunks);
-        
-        // Process Excel file
-        const workbook = XLSX.read(buffer);
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const data = XLSX.utils.sheet_to_json(sheet);
-        
-        console.log("Excel data processed, saving to DB");
-        // Save to MongoDB
-        const result = await ExcelData.create({ data: data });
-        
-        console.log("Data saved successfully");
-        res.status(200).json({ 
-          message: "File uploaded and processed successfully",
-          recordsProcessed: data.length
-        });
-      } catch (error) {
-        console.error("Processing error:", error);
-        res.status(500).json({ error: error.message });
-      }
-    });
+    try {
+      const chunks = [];
+      const downloadStream = gfs.openDownloadStreamByName(req.file.filename);
+      
+      downloadStream.on('data', (chunk) => {
+        console.log("Receiving chunk");
+        chunks.push(chunk);
+      });
+
+      downloadStream.on('error', (error) => {
+        console.error("Stream error:", error);
+        res.status(500).json({ error: "Error reading file" });
+      });
+
+      downloadStream.on('end', async () => {
+        console.log("Stream ended, processing file");
+        try {
+          const buffer = Buffer.concat(chunks);
+          
+          // Process Excel file
+          const workbook = XLSX.read(buffer);
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const data = XLSX.utils.sheet_to_json(sheet);
+          
+          console.log("Excel data processed, saving to DB");
+          // Save to MongoDB
+          const result = await ExcelData.create({ data: data });
+          
+          console.log("Data saved successfully");
+          res.status(200).json({ 
+            message: "File uploaded and processed successfully",
+            recordsProcessed: data.length
+          });
+        } catch (error) {
+          console.error("Processing error:", error);
+          res.status(500).json({ error: error.message });
+        }
+      });
+    } catch (error) {
+      console.error("Stream setup error:", error);
+      res.status(500).json({ error: error.message });
+    }
 
   } catch (error) {
     console.error("Upload error:", error);
