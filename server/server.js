@@ -26,7 +26,7 @@ app.use(cors({
     origin: [
         'http://localhost:3000',
         'https://file-upload-meas.vercel.app',
-        'https://file-upload-brown.vercel.app'
+        'https://file-upload-9v08.onrender.com/'
     ],
     methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
