@@ -87,12 +87,11 @@ app.post('/generate_sql', async (req, res) => {
     validateCSVContent(buffer);
     
     // Initialize DuckDB
-    const db = new duckdb.Database(':memory:');
+    const db = new duckdb.Database(':memory:', { allow_unsigned_extensions: true });
     const conn = db.connect();
 
     // Create a temporary file to store the CSV data
-    const tempFilePath = path.join(os.tmpdir(), `${Date.now()}.csv`);
-    require('fs').writeFileSync(tempFilePath, buffer);
+    const tempFilePath = path.join('/tmp', `${Date.now()}.csv`);
 
     // Load data into DuckDB with explicit CSV options
     await new Promise((resolve, reject) => {
