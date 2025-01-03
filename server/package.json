@@ -12,15 +12,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google/generative-ai": "^0.2.1",
+    "cloudinary": "^1.41.3",
+    "cloudinary-core": "^2.13.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
+    "duckdb": "^0.10.1",
     "express": "^4.21.2",
+    "google-auth-library": "^9.6.3",
     "gridfs-stream": "^1.1.1",
     "mongodb": "^5.9.1",
     "mongoose": "^8.9.2",
     "multer": "1.4.4",
     "multer-gridfs-storage": "5.0.2",
+    "node-fetch": "^2.7.0",
     "xlsx": "^0.18.5"
   },
   "engines": {
