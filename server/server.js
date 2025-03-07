@@ -154,7 +154,7 @@ app.post('/generate_sql', async (req, res) => {
     console.log("Sample Data:", tableStructure);
 
     // Generate SQL using Google AI
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
     const prompt = `You are an SQL query generator for DuckDB. 
                    Given this request: "${text}" 
                    and this table structure: ${JSON.stringify(tableStructure)},

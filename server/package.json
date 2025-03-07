@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@google/generative-ai": "^0.2.1",
+    "@google/generative-ai": "^0.24.0",
     "cloudinary": "^1.41.3",
     "cloudinary-core": "^2.13.1",
     "cors": "^2.8.5",
